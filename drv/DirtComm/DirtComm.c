@@ -7,9 +7,12 @@
 * Log:          eaz.mod.171124
                 Allow to receive not only one frame. write RxBuffer and read
                 RxBuffer is independent and rotary.
+                eaz.mod.171128
+                Add head identification.
 *************************************************************************/
 // common include
 #include "system.h"
+#include "SimuUart.h"
 
 // comm-send micros
 #define TRUE                    (1)
@@ -19,12 +22,13 @@
 static void SimuUartTxdClr(void);
 static void SimuUartTxdSet(void);
 static bit SimuUartRxdValue(void);
+static bit FindFrameHead(PSimuUart pxsSimuUart);
+static void CopyRxBuff(unsigned char *pucDstBuff, PSimuUart pxsSimuUart);
 static unsigned char \
 SimuCommCheckSum(const unsigned char Datastr[], const unsigned char LengCnt);
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> override area ORG
 // modulation include
-#include "SimuUart.h"
 #include "DirtComm.h"
 
 // ports
@@ -39,15 +43,14 @@ SimuCommCheckSum(const unsigned char Datastr[], const unsigned char LengCnt);
 // frame related
 #define COMM_FRAME_LEN			(5)
 #define	COMM_HEAD				(0x55)
-#define	COMM_DDS				(0xB1)
+#define	COMM_RX_FORMAT_BYTE 	(0xB1)
 #define	COMM_CHECK				(0X41)
 #define	COMM_SND_ERROR			(0X01)
 #define	COMM_SND_NORMAL			(0X00)
 
 // create a simulate uart, [NEED NOT TO CHANGE]
 static SimuUart xdata s_xsSimuUart = {
-	COMM_HEAD,				// Head
-	COMM_FRAME_LEN,			// FrameLen
+    COMM_FRAME_LEN,
     COMM_BAUD_RATE_COUNTER, // BaudRateCounterBak
 
     0,      // bRI
@@ -123,20 +126,17 @@ void SimuDirtUartCommProcess(void)
 **/
 DIRT_COMM_STATE GetDirtValue(unsigned char *pucValue)
 {
-    unsigned char xdata ucCounter1 = 0, ucCounter2 = 0;
-    
-    if(s_xsSimuUart.ucRxBuffReadPos != s_xsSimuUart.ucRxBuffWritePos)
+    if(FindFrameHead(&s_xsSimuUart))
     {
-        if(s_xsSimuUart.ucRxBuffReadPos + s_xsSimuUart.ucFrameLen > MAX_SIMU_UART_RX_BUFF_LEN)
-        {
-            s_xsSimuUart.ucRxBuffReadPos = 0;
-        }
+        unsigned char xdata ucTempRxBuff[COMM_FRAME_LEN];
         
-        if(s_xsSimuUart.ucRxBuff[s_xsSimuUart.ucRxBuffReadPos + 4] \
-                == SimuCommCheckSum(&s_xsSimuUart.ucRxBuff[s_xsSimuUart.ucRxBuffReadPos + 1], 3))
+        CopyRxBuff(&ucTempRxBuff, &s_xsSimuUart);
+        if(ucTempRxBuff[4] == SimuCommCheckSum(&ucTempRxBuff[1], 3))
         {
-            *pucValue = s_xsSimuUart.ucRxBuff[s_xsSimuUart.ucRxBuffReadPos + 2];
-            s_xsSimuUart.ucRxBuffReadPos += s_xsSimuUart.ucFrameLen;
+            *pucValue = ucTempRxBuff[2];
+            
+            s_xsSimuUart.ucRxBuffReadPos = (s_xsSimuUart.ucRxBuffReadPos + s_xsSimuUart.ucFrameLen)
+                                                % MAX_SIMU_UART_RX_BUFF_LEN;
             
             return DIRT_COMM_REV_OK;
         }
@@ -164,7 +164,7 @@ DIRT_COMM_STATE CheckDirtValue(void)
 	if(!s_xsSimuUart.ucTI)
 	{
 		s_xsSimuUart.ucTxBuff[0] = COMM_HEAD;
-		s_xsSimuUart.ucTxBuff[1] = COMM_DDS;
+		s_xsSimuUart.ucTxBuff[1] = COMM_RX_FORMAT_BYTE;
 		s_xsSimuUart.ucTxBuff[2] = COMM_CHECK;
 		s_xsSimuUart.ucTxBuff[3] = 0x00;
 		s_xsSimuUart.ucTxBuff[4] \
@@ -214,6 +214,56 @@ static void SimuUartTxdClr(void)
 static bit SimuUartRxdValue(void)
 {
 	return P_SimuRXD;
+}
+
+/**
+ * SimuUartRxdValue
+ * bit, void
+ * eaz.org.171127
+ * Find the frame head.
+**/
+static bit FindFrameHead(PSimuUart pxsSimuUart)
+{
+    while(pxsSimuUart->ucRxBuffReadPos != pxsSimuUart->ucRxBuffWritePos)
+    {
+        if(pxsSimuUart->ucRxBuff[pxsSimuUart->ucRxBuffReadPos] == COMM_HEAD)
+        {
+            if(pxsSimuUart->ucRxBuff[pxsSimuUart->ucRxBuffReadPos + 1] == COMM_RX_FORMAT_BYTE)
+            {
+                return 1;
+            }
+            else
+            {
+                pxsSimuUart->ucRxBuffReadPos ++;
+            }
+        }
+        else
+        {
+            pxsSimuUart->ucRxBuffReadPos ++;
+        }
+        
+        if(pxsSimuUart->ucRxBuffReadPos >= pxsSimuUart->ucFrameLen)
+        {
+            pxsSimuUart->ucRxBuffReadPos = 0;
+        }
+    }
+    return 0;
+}
+
+/**
+ * CopyRxBuff
+ * void, unsigned char*, PSimuUart
+ * eaz.org.171128
+ * Maybe for common use.
+**/
+static void CopyRxBuff(unsigned char *pucDstBuff, PSimuUart pxsSimuUart)
+{
+    unsigned int xdata uiCounter;
+    
+    for(uiCounter = 0; uiCounter < pxsSimuUart->ucFrameLen; uiCounter++)
+    {
+        pucDstBuff[uiCounter] = pxsSimuUart->ucRxBuff[(pxsSimuUart->ucRxBuffReadPos + uiCounter) % MAX_SIMU_UART_RX_BUFF_LEN];
+    }
 }
 
 /**

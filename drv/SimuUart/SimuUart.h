@@ -7,6 +7,9 @@
 * Log:          eaz.mod.171124
                 Allow to receive not only one frame. write RxBuffer and read
                 RxBuffer is independent and rotary.
+                eaz.mod.171128
+                delete member var ucHead, and donot check Framelen in receive
+                round.
 *************************************************************************/
 #ifndef	_SIMU_UART_H_
 #define	_SIMU_UART_H_
@@ -18,8 +21,7 @@
 // the simulate uart structure
 typedef struct tagSimuUart
 {
-	unsigned char	ucHead;
-	unsigned char	ucFrameLen;
+    unsigned char   ucFrameLen;
     unsigned char   ucBaudRateCounterBak;
     
     // Rx

@@ -7,6 +7,9 @@
 * Log:          eaz.mod.171124
                 Allow to receive not only one frame. write RxBuffer and read
                 RxBuffer is independent and rotary.
+                eaz.mod.171128
+                delete member var ucHead, and donot check Framelen in receive
+                round.
 *************************************************************************/
 // modulation include
 #include "SimuUart.h"
@@ -237,19 +240,14 @@ void SimuUartReceive(PSimuUart pxsSimuUart)
             {
                 if(pxsSimuUart->RXD_VALUE())
                 {
-                    if((pxsSimuUart->ucRxBuffWritePos + pxsSimuUart->ucFrameLen)
-                            > MAX_SIMU_UART_RX_BUFF_LEN)
+                    if(pxsSimuUart->ucRxBuffWritePos >= MAX_SIMU_UART_RX_BUFF_LEN)
                     {
                         pxsSimuUart->ucRxBuffWritePos = 0;  // Align
                     }
                     
-                    pxsSimuUart->ucRxBuff[pxsSimuUart->ucRxBuffWritePos] = pxsSimuUart->ucRxShiftRegister;
+                    pxsSimuUart->ucRxBuff[pxsSimuUart->ucRxBuffWritePos++] = pxsSimuUart->ucRxShiftRegister;
                     
-                    if(!((++pxsSimuUart->ucRxBuffWritePos) % pxsSimuUart->ucFrameLen))
-                    {
-                        pxsSimuUart->ucRI = TRUE;
-                    }
-                    
+                    pxsSimuUart->ucRI = TRUE;
                     pxsSimuUart->ucRxBitPos = 0;
                     pxsSimuUart->ucRxBaudRateCounter = 0;
                 }
@@ -261,19 +259,14 @@ void SimuUartReceive(PSimuUart pxsSimuUart)
                     // always low
                 }
                 
-                if((pxsSimuUart->ucRxBuffWritePos + pxsSimuUart->ucFrameLen)
-                        > MAX_SIMU_UART_RX_BUFF_LEN)
+                if(pxsSimuUart->ucRxBuffWritePos >= MAX_SIMU_UART_RX_BUFF_LEN)
                 {
                     pxsSimuUart->ucRxBuffWritePos = 0;  // Align
                 }
 
-                pxsSimuUart->ucRxBuff[pxsSimuUart->ucRxBuffWritePos] = pxsSimuUart->ucRxShiftRegister;
-                    
-                if(!((++pxsSimuUart->ucRxBuffWritePos) % pxsSimuUart->ucFrameLen))
-                {
-                    pxsSimuUart->ucRI = TRUE;
-                }
+                pxsSimuUart->ucRxBuff[pxsSimuUart->ucRxBuffWritePos++] = pxsSimuUart->ucRxShiftRegister;
                 
+                pxsSimuUart->ucRI = TRUE;
                 pxsSimuUart->ucRxBitPos = 0;
                 pxsSimuUart->ucRxBaudRateCounter = 0;
             }
