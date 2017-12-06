@@ -1,0 +1,64 @@
+/*************************************************************************
+* Copyright:    Midea Kitchenware(Oven).
+* File:         Eeprom.h
+* Layer:        Driver.ex
+* Author:       eaz
+* Version:      0.0.171122
+* Brief:        this driver is only for 24C02/01
+*************************************************************************/
+#ifndef	_EEPROM_H_
+#define	_EEPROM_H_
+
+// data structure
+typedef enum
+{
+    E2_DEVICE_CONFIG_ORG_ADDR,
+    E2_DEVICE_CONFIG_END_ADDR,
+
+    E2_USER_CONFIG_ORG_ADDR = 0x20,
+    E2_USER_CONFIG_AREA1_ADDR = 0x20,
+    E2_USER_CONFIG_AREA2_ADDR = 0x21,
+    E2_USER_CONFIG_UPPER_OFFSET_ADDR = 0x22,
+    E2_USER_CONFIG_LOWER_OFFSET_ADDR = 0x23,
+    E2_USER_CONFIG_END_ADDR = 0x2F,
+
+    E2_USER_CONFIG_ORG_BAK1_ADDR = E2_USER_CONFIG_ORG_ADDR + 0x10,
+    E2_USER_CONFIG_AREA1_BAK1_ADDR = E2_USER_CONFIG_AREA1_ADDR + 0x10,
+    E2_USER_CONFIG_AREA2_BAK1_ADDR = E2_USER_CONFIG_AREA2_ADDR + 0x10,
+    E2_USER_CONFIG_UPPER_OFFSET_BAK1_ADDR = E2_USER_CONFIG_UPPER_OFFSET_ADDR + 0x10,
+    E2_USER_CONFIG_LOWER_OFFSET_BAK1_ADDR = E2_USER_CONFIG_LOWER_OFFSET_ADDR + 0x10,
+    E2_USER_CONFIG_END_BAK1_ADDR = E2_USER_CONFIG_END_ADDR + 0x10,
+
+    E2_USER_CONFIG_ORG_BAK2_ADDR = E2_USER_CONFIG_ORG_ADDR + 0x20,
+    E2_USER_CONFIG_AREA1_BAK2_ADDR = E2_USER_CONFIG_AREA1_ADDR + 0x20,
+    E2_USER_CONFIG_AREA2_BAK2_ADDR = E2_USER_CONFIG_AREA2_ADDR + 0x20,
+    E2_USER_CONFIG_UPPER_OFFSET_BAK2_ADDR = E2_USER_CONFIG_UPPER_OFFSET_ADDR + 0x20,
+    E2_USER_CONFIG_LOWER_OFFSET_BAK2_ADDR = E2_USER_CONFIG_LOWER_OFFSET_ADDR + 0x20,
+    E2_USER_CONFIG_END_BAK2_ADDR = E2_USER_CONFIG_END_ADDR + 0x20,
+
+    E2_ERROR_CODE_ORG_ADDR = 0xD0,
+    E2_ERROR_CODE_COUNTER_ADDR = 0xD0,
+    E2_ERROR_CODE_PTR_ADDR = 0xD1,
+    E2_ERROR_CODE_OFFSET = 4,
+    E2_ERROR_CODE_HEAD_ADDR = 0xD2,
+    E2_ERROR_CODE_REAR_ADDR = 0xEE,
+    E2_ERROR_CODE_END_ADDR = 0xF1,
+
+    E2_REAL_TIME_BAK_ADDR = 0xF2,   // 4Bytes, in second
+    E2_CRC16_ADDR = 0xFE
+}EEPROM_ADDR;
+
+typedef enum
+{
+    E2STATE_RD_OK,
+    E2STATE_RD_FAIL,
+    E2STATE_WR_OK,
+    E2STATE_WR_FAIL
+}EEPROM_STATE;
+
+// interface
+extern EEPROM_STATE E2WriteByte(EEPROM_ADDR eE2Addr, unsigned char ucData);
+extern EEPROM_STATE E2ReadByte(EEPROM_ADDR eE2Addr, unsigned char *pucData);
+extern EEPROM_STATE E2ReadBytes(EEPROM_ADDR eE2Addr, unsigned char *pucData, unsigned char ucLen);
+
+#endif //_EEPROM_H_
