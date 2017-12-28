@@ -16,7 +16,7 @@ typedef struct tagSimuTimer
     unsigned char   bTimeUpFlag;        // C51 donot support bool type, and bit in struct
     unsigned char   bTimeActiveFlag;    // C51 donot support bool type, and bit in struct
 }SimuTimer, *PSimuTimer;
-static SimuTimer xdata s_xsTimers[TIMER_SUM];
+static SimuTimer s_xsTimers[TIMER_SUM];
 
 /**
  * StartTimer
@@ -41,7 +41,7 @@ void StartTimer(TIMER_ID eTimerId, unsigned int uiTimeMs)
 **/
 bit TimeOut(TIMER_ID eTimerId)
 {
-    if(s_xsTimers[eTimerId].bTimeUpFlag)
+    if(s_xsTimers[eTimerId].bTimeUpFlag && s_xsTimers[eTimerId].bTimeActiveFlag)
     {
         s_xsTimers[eTimerId].uiValue = 0;
         s_xsTimers[eTimerId].bTimeUpFlag = 0;
@@ -74,7 +74,7 @@ void StopTimer(TIMER_ID eTimerId)
 **/
 void SimuTimerHandler(void)
 {
-    unsigned char xdata ucTimerIndex;
+    unsigned char ucTimerIndex;
 
     for(ucTimerIndex = 0; ucTimerIndex<TIMER_SUM; ucTimerIndex ++)
     {
