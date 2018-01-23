@@ -13,8 +13,8 @@ typedef struct tagSimuTimer
 {
     unsigned int    uiValue;
     unsigned int    uiValueBak;
-    unsigned char   bTimeUpFlag;        // C51 donot support bool type, and bit in struct
-    unsigned char   bTimeActiveFlag;    // C51 donot support bool type, and bit in struct
+    bool            bTimeUpFlag;
+    bool            bTimeActiveFlag;
 }SimuTimer, *PSimuTimer;
 static SimuTimer s_xsTimers[TIMER_SUM];
 
@@ -22,15 +22,14 @@ static SimuTimer s_xsTimers[TIMER_SUM];
  * StartTimer
  * void, TIMER_ID, unsigned int
  * eaz.org.171122
- * Start counting.
- * This timer-base is 2ms.
+ * Start or restart a counting cycle
 **/
 void StartTimer(TIMER_ID eTimerId, unsigned int uiTimeMs)
 {
-    s_xsTimers[eTimerId].uiValueBak = uiTimeMs >> 1;
+    s_xsTimers[eTimerId].uiValueBak = uiTimeMs;
     s_xsTimers[eTimerId].uiValue = 0;
-    s_xsTimers[eTimerId].bTimeUpFlag = 0;
-    s_xsTimers[eTimerId].bTimeActiveFlag = 1;
+    s_xsTimers[eTimerId].bTimeUpFlag = false;
+    s_xsTimers[eTimerId].bTimeActiveFlag = true;
 }
 
 /**
@@ -39,17 +38,17 @@ void StartTimer(TIMER_ID eTimerId, unsigned int uiTimeMs)
  * eaz.org.171122
  * Return the timer's time-out state, and recount.
 **/
-bit TimeOut(TIMER_ID eTimerId)
+bool TimeOut(TIMER_ID eTimerId)
 {
     if(s_xsTimers[eTimerId].bTimeUpFlag && s_xsTimers[eTimerId].bTimeActiveFlag)
     {
         s_xsTimers[eTimerId].uiValue = 0;
-        s_xsTimers[eTimerId].bTimeUpFlag = 0;
+        s_xsTimers[eTimerId].bTimeUpFlag = false;
 
-        return 1;
+        return true;
     }
 
-    return 0;
+    return false;
 }
 
 /**
@@ -60,10 +59,10 @@ bit TimeOut(TIMER_ID eTimerId)
 **/
 void StopTimer(TIMER_ID eTimerId)
 {
-    s_xsTimers[eTimerId].bTimeActiveFlag = 0;
+    s_xsTimers[eTimerId].bTimeActiveFlag = false;
     s_xsTimers[eTimerId].uiValueBak = 0;
     s_xsTimers[eTimerId].uiValue = 0;
-    s_xsTimers[eTimerId].bTimeUpFlag = 1;
+    s_xsTimers[eTimerId].bTimeUpFlag = false;
 }
 
 /**
@@ -86,7 +85,7 @@ void SimuTimerHandler(void)
             if(s_xsTimers[ucTimerIndex].uiValue
                >= s_xsTimers[ucTimerIndex].uiValueBak)
             {
-                s_xsTimers[ucTimerIndex].bTimeUpFlag = 1;
+                s_xsTimers[ucTimerIndex].bTimeUpFlag = true;
             }
         }
     }
